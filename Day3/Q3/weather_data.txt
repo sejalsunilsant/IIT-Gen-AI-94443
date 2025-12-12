@@ -1,0 +1,4 @@
+Weather in Mumbai:
+Temperature: 24.99 C
+Humidity: 41%
+Description: smoke
