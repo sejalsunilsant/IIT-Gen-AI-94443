@@ -1,2 +1,9 @@
-**__pycache__/**
-**pyvenv.cfg/**
+__pycache__/
+*.pyc
+venv/
+ENV/
+env/
+Lib/
+Scripts/
+pyvenv.cfg
+*.log
