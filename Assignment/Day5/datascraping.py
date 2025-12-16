@@ -17,13 +17,13 @@ print("Page Title:", driver.title)
 # define wait strategy
 driver.implicitly_wait(5)
 # interact with web controls
-table = wait.until(
+table1 = wait.until(
     EC.presence_of_element_located(
         (By.XPATH, "//div[@id='collapseSix']//table")
     )
 )
 
-rows = table.find_elements(By.XPATH, ".//tbody/tr")
+rows = table1.find_elements(By.XPATH, ".//tbody/tr")
 
 with open("table_data.csv", "w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
@@ -32,7 +32,22 @@ with open("table_data.csv", "w", newline="", encoding="utf-8") as file:
         cells = row.find_elements(By.TAG_NAME, "td")
         row_data = [cell.get_attribute("textContent").strip() for cell in cells]
         writer.writerow(row_data)
-
 print("Table saved to table_data.csv")
+
+table2 = wait.until(
+    EC.presence_of_element_located(
+        (By.CLASS_NAME, "table-responsive")
+    )
+)
+rows = table2.find_elements(By.XPATH, ".//tbody/tr")
+
+with open("table_data_batch.csv", "a", newline="", encoding="utf-8") as file:
+    writer = csv.writer(file)
+
+    for row in rows:
+        cells = row.find_elements(By.TAG_NAME, "td")
+        row_data = [cell.get_attribute("textContent").strip() for cell in cells]
+        writer.writerow(row_data)
+print("Additional Table saved to table_data_batch.csv")
     
 driver.quit()
