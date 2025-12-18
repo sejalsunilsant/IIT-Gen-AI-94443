@@ -48,3 +48,10 @@ if user_question and uploaded_file is not None:
         st.dataframe(query_result)
     except Exception as e:
         st.error(f"SQL Error: {e}")
+# ask to explain result in English.
+    explain_prompt = f"""Explain the result of the SQL query: {sql_query} in simple English."""
+    conversation.append({"role": "user", "content": explain_prompt})
+
+    explanation = llm.invoke(conversation)
+    st.subheader("Explanation of the Result")
+    st.markdown(explanation.content)
