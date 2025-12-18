@@ -72,6 +72,7 @@ if user_city:
         Condition: {weather['description']}
 
         Explain this weather in very simple English.
+        based on weather data above give short instructions to a person to prepare for the day.
         """
 
         st.session_state.conversation.append(
