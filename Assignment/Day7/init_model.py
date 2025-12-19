@@ -13,31 +13,42 @@ llm = init_chat_model(
     api_key = os.getenv("groq_Api")
 )
 
+# -------- Session State --------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# -------- Display History --------
 for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
-
+# -------- User Input --------
 user_chat = st.chat_input("Type your message...")
+
 if user_chat:
-    if user_chat=="clear":
+    if user_chat.lower() == "clear":
         st.session_state.messages = []
         st.experimental_rerun()
-    result=llm.stream(user_chat)
-    st.write_stream([chunk.content for chunk in result])
+
+    # Save user message
     st.session_state.messages.append(
         {"role": "user", "content": user_chat}
     )
-    full_response = ""
-    for chunk in result:
-        full_response += chunk.content
+
+    with st.chat_message("user"):
+        st.markdown(user_chat)
+
+    # Assistant response
+    with st.chat_message("assistant"):
+        full_response = ""
+        stream = llm.stream(user_chat)
+
+        for chunk in stream:
+            if chunk.content:
+                full_response += chunk.content
+        st.markdown(full_response)
+
+    # Save assistant message AFTER streaming
     st.session_state.messages.append(
         {"role": "assistant", "content": full_response}
     )
-    
-
-
-

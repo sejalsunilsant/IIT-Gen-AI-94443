@@ -3,7 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
-
+import time
 load_dotenv()
 
 st.set_page_config(page_title="Weather Bot", page_icon="🤖", layout="centered")
@@ -11,10 +11,10 @@ st.title("🌤️ Weather Bot")
 
 # ----------- LLM INIT -----------
 llm = init_chat_model(
-    model="llama-3.3-70b-versatile",
+    model="phi-3.1-mini-4k-instruct",
     model_provider="openai",
-    base_url="https://api.groq.com/openai/v1",
-    api_key=os.getenv("groq_Api")
+    base_url="http://127.0.0.1:1234/v1",
+    api_key="my_openai_api_key"
 )
 
 # ----------- SESSION MEMORY -----------
@@ -35,7 +35,10 @@ for msg in st.session_state.messages:
 def get_weather(city):
     api_key = os.getenv("API_weather_KEY")
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
+    time1=time.time()
     response = requests.get(url)
+    time2=time.time()
+    print(f"Weather API response time: {time2-time1} seconds")
 
     if response.status_code != 200:
         return None
@@ -73,6 +76,7 @@ if user_city:
 
         Explain this weather in very simple English.
         based on weather data above give short instructions to a person to prepare for the day.
+        give weather parameters in bullet points.
         """
 
         st.session_state.conversation.append(
