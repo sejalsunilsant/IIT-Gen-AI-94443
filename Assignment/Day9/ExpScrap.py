@@ -1,35 +1,30 @@
+import os
+import csv
 import pandas as pd
 import streamlit as st
-import os
-from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
 
+# Selenium
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# LangChain
+from langchain.chat_models import init_chat_model
+from langchain.agents import create_agent
+from langchain.tools import tool
+
+# ---------------- ENV ----------------
 load_dotenv()
 
-# -------- UI --------
-st.title("Agentic LLM 🤖")
+# ---------------- STREAMLIT UI ----------------
+st.set_page_config(page_title="Agentic Internship Chatbot", layout="wide")
+st.title("🤖 Agentic Internship Chatbot")
 
-# -------- Session State --------
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-if "conversation" not in st.session_state:
-    st.session_state.conversation = [
-        {"role": "system", "content": "You are an academic education expert."}
-    ]
-
-if "explained" not in st.session_state:
-    st.session_state.explained = False
-
-#-----------------
-def scrapping_data():
-    from selenium import webdriver
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    import csv
-
+# ---------------- SCRAPING LOGIC (NORMAL FUNCTION) ----------------
+def scrape_sunbeam_data():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
@@ -58,14 +53,23 @@ def scrapping_data():
     driver.quit()
     return table_data
 
-#-----------------
-uploaded_file = scrapping_data()
-st.session_state.data = uploaded_file
+# ---------------- TOOL FOR AGENT ----------------
+@tool
+def scrape_data_tool():
+    """Scrapes internship data and saves it to CSV"""
+    return scrape_sunbeam_data()
 
-if st.session_state.data:
-    st.dataframe(uploaded_file)
+# ---------------- LOAD DATA ONCE ----------------
+if "data" not in st.session_state:
+    with st.spinner("Scraping internship data..."):
+        st.session_state.data = scrape_sunbeam_data()
 
-# -------- LLM --------
+# ---------------- DISPLAY DATA ----------------
+df = pd.DataFrame(st.session_state.data)
+st.subheader("📊 Scraped Internship Data")
+st.dataframe(df, use_container_width=True)
+
+# ---------------- LLM SETUP ----------------
 llm = init_chat_model(
     model="llama-3.3-70b-versatile",
     model_provider="openai",
@@ -73,39 +77,33 @@ llm = init_chat_model(
     api_key=os.getenv("groq_Api")
 )
 
-# -------- Explanation (FIXED) --------
-if st.session_state.data and not st.session_state.explained:
-    explain_prompt = f"""
-Explain the result of the Scrapped data: {uploaded_file} in simple English.
-"""
-    st.session_state.conversation.append(
-        {"role": "user", "content": explain_prompt}
-    )
+agent = create_agent(
+    model=llm,
+    tools=[scrape_data_tool],
+    system_prompt="""
+    You are an academic data assistant.
+    Answer questions ONLY using the internship data.
+    If the answer is not present, say:
+    "Not available in the data."
+    """
+)
 
-    explained = llm.invoke(st.session_state.conversation)
-    st.subheader("Explanation of the Result")
-    st.markdown(explained.content)
+# ---------------- CHATBOT ----------------
+st.subheader("Ask anything.......")
 
-    st.session_state.explained = True
+user_question = st.chat_input("Ask a question based on the internship data")
 
-# -------- Chat Q&A --------
-user_question = st.chat_input("Enter your question about the data:")
-
-if user_question and uploaded_file is not None:
+if user_question:
     prompt = f"""
-You are a data-aware assistant.
-Answer ONLY using the provided internship data.
-If answer is not present in data, say "Not available in the data."
-Asked question: {user_question}
-"""
+    Internship Data:
+    {df.to_string(index=False)}
 
-    st.session_state.messages.append(
-        {"role": "user", "content": prompt}
-    )
+    Question:
+    {user_question}
 
-    st.session_state.conversation.append(
-        {"role": "user", "content": prompt}
-    )
+    Answer only using the above data.
+    give some detail about answer which related to answer
+    """
 
-    response = llm.invoke(st.session_state.conversation)
+    response = llm.invoke(prompt)
     st.markdown(response.content)
