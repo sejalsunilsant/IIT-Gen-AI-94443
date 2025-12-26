@@ -1,0 +1,9 @@
+Sunbeam chatbot:
+scrab data from:
+About us
+Internship
+course 
+Give pdf name: url link
+As wedsite changes pdf must update
+
+based scrabed data it should answer in short but efficient enough.
