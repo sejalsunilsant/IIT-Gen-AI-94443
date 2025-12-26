@@ -21,7 +21,7 @@ st.set_page_config(
 messages = []
 context_docs = []
 if "action" not in st.session_state:
-    st.session_state.action = None
+    st.session_state.action = "shortlist"
 
 
 # ---------------- LLM ----------------
